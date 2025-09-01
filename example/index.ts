@@ -14,7 +14,7 @@ export const statusMessages = {
 localStorage.setItem('DEBUG', 'mergeparty:*')  // application debug
 localStorage.setItem(  // automerge debug
     'debug',
-    'automerge-repo:docsync,automerge-repo:network*,automerge-repo:websocket*'
+    'automerge-repo:docsync*,automerge-repo:network*,automerge-repo:websocket*'
 )
 
 const state = State()

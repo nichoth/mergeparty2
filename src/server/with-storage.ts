@@ -2,37 +2,19 @@
 import type * as Party from 'partykit/server'
 import {
     type AnyDocumentId,
-    // type Doc,
-    type DocHandle,
     type Message,
-    // type DocumentId,
-    type PeerId,
     Repo,
     type StorageAdapterInterface,
     type StorageKey,
-    // type SyncMessage,
 } from '@substrate-system/automerge-repo-slim'
-// import { type Message } from '@automerge/automerge-repo/slim'
-import {
-    type SyncState,
-    // initSyncState,
-    // generateSyncMessage,
-} from '@automerge/automerge'
-// import * as A from '@automerge/automerge'
 import { Relay } from './relay.js'
-// import Debug from '@substrate-system/debug/node'
-// const debug = Debug('mergeparty:storage')
 
-export class WithStorage<T=any>
+export class WithStorage
     extends Relay
     implements Party.Server, StorageAdapterInterface
 {  // eslint-disable-line brace-style
-    // private doc:Doc<T>
-    readonly isStorageServer:boolean = true
-    private syncStateByPeer:Record<string|PeerId, SyncState> = {}
-    private handle?:DocHandle<T>
-    private handleP?:Promise<DocHandle<T>>
-    private saving:Promise<void>|null = null
+    readonly isStorageServer:boolean = true  /* This is used by the relay,
+      to decide if we should be announced as a peer. */
 
     constructor (room:Party.Room) {
         super(room)
@@ -43,14 +25,8 @@ export class WithStorage<T=any>
          */
         this._repo = new Repo({
             storage: this,
-            sharePolicy: async () => true,   // <- important on a server peer
+            sharePolicy: async () => true,
         })
-    }
-
-    async _find () {
-        const doc = this._repo.find(this.room.id as AnyDocumentId)
-        console.log('found it !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', doc)
-        return doc
     }
 
     // /**
@@ -80,14 +56,12 @@ export class WithStorage<T=any>
 
         // 2) Ensure the relevant handle is ready, then flush
         await this.safeFlush(raw)
-
-        console.log('ok, got a message', conn.id, raw instanceof ArrayBuffer)
     }
 
     /**
      * Loads a value from PartyKit storage by key.
-     * @param key The storage key (StorageKey)
-     * @returns Promise<Uint8Array | undefined>
+     * @param {StorageKey} key The storage key
+     * @returns {Promise<Uint8Array|undefined>}
      */
     async load (key:StorageKey):Promise<Uint8Array|undefined> {
         const value = await this.room.storage.get(this.keyToString(key))
@@ -109,8 +83,6 @@ export class WithStorage<T=any>
      * @param {Uint8Array} value The value to store (Uint8Array)
      */
     async save (key:StorageKey, value:Uint8Array):Promise<void> {
-        console.log('**saving something**', this.keyToString(key))
-        console.log('[save]', key.join('.'))
         // Use .buffer, but slice to correct offset/length
         const buf = ((
             value.byteOffset === 0 &&
@@ -133,7 +105,7 @@ export class WithStorage<T=any>
     /**
      * Loads a range of values from PartyKit storage by prefix.
      * @param prefix The key prefix
-     * @returns Promise<{ key: string, value: Uint8Array }[]>
+     * @returns {Promise<{ key:StorageKey, value:Uint8Array }[]>}
      */
     async loadRange (prefix:StorageKey):Promise<{
         key:StorageKey;
@@ -185,7 +157,6 @@ export class WithStorage<T=any>
     private async safeFlush (raw:ArrayBuffer|string) {
         // We only care about binary protocol frames
         if (!(raw instanceof ArrayBuffer)) return
-        console.log('__ called safe flush ____')
 
         // Best-effort decode so we can branch on type & docId
         let msg:Message|undefined
@@ -194,7 +165,7 @@ export class WithStorage<T=any>
         if (!docId) return
 
         // Register interest so the repo tracks this doc (non-blocking)
-        try { void this._repo.find(docId) } catch {}
+        try { this._repo.find(docId) } catch {}
 
         // 2) Only try to persist on 'sync' (a 'request' carries no bytes)
         if (msg.type !== 'sync') return
@@ -214,11 +185,8 @@ export class WithStorage<T=any>
         }
     }
 
-    // Implement this by delegating to your Relay's registry.
-    // If your Relay already exposes it, remove this stub.
     protected unicastByPeerId (peerId:string, data:Uint8Array) {
-    // @ts-expect-error: Relay likely has something like this.peers or this.connections
-        const conn:Party.Connection|undefined = this.lookupConnection?.(peerId)
+        const conn:Party.Connection|undefined = this.sockets[peerId]
         if (conn) conn.send(data)
     }
 

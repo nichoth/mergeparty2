@@ -7,7 +7,6 @@ import {
     type NetworkAdapter,
     type PeerId,
     type PeerMetadata,
-    type Message
 } from '@substrate-system/automerge-repo-slim'
 import {
     CORS,
@@ -120,8 +119,6 @@ export class Relay
      *        to other peers.
      */
     connect (peerId:PeerId, meta:PeerMetadata):void {
-        console.log('**connect was called**', peerId, meta)
-        // console.log('**this._repo**', this._repo)
         this.peerId = peerId
         this.peerMetadata = meta
     }
@@ -131,8 +128,6 @@ export class Relay
     }
 
     send (message:FromServerMessage):void {
-        console.log('**sending**', message)
-        console.log('[send]', message.type, '->', message.targetId)
         if ('data' in message && message.data?.byteLength === 0) {
             throw new Error('Tried to send a zero-length message')
         }
@@ -148,8 +143,6 @@ export class Relay
 
         const encoded = cborEncode(message)
         to.send(toArrayBuffer(encoded))
-
-        // console.log('*** sending things ****', message)
     }
 
     open ():void {}
@@ -232,8 +225,6 @@ export class Relay
                  * @see {@link https://github.com/automerge/automerge-repo/blob/0c791e660723d8701a817c02d88bed4bf249b588/packages/automerge-repo-network-websocket/src/WebSocketServerAdapter.ts#L178}
                  * If not a 'join' message, `this.emit('message', msg)`
                  */
-                console.log('[deliver->repo]',
-                    message.type, 'target=', message.targetId, 'mine=', this.peerId)
                 this.emit('message', message)
                 return
             }
@@ -257,9 +248,6 @@ export class Relay
             // ---------- message is valid join type ----------
 
             const { senderId, peerMetadata, supportedProtocolVersions } = join
-            const myPeerId = this.peerId
-            console.log('**my peer ID**', myPeerId)
-            console.log('**valid join message**', senderId)
             // Let the repo know that we have a new connection.
             this.emit('peer-candidate', {
                 peerId: senderId,
@@ -274,7 +262,6 @@ export class Relay
 
             const selectedProtocolVersion = selectProtocol(supportedProtocolVersions)
             if (selectedProtocolVersion === null) {
-                console.log('**errrrrrrrrr** protocol')
                 // invalid protocol version
                 this.send({
                     type: 'error',
@@ -313,7 +300,6 @@ export class Relay
             //    then announce ourselves as a peer
             if (this.isStorageServer) {
                 assert(this.peerId)
-                console.log('announce myself', this.peerId)
                 this.announce(this.peerId, join.senderId)
             }
 
@@ -321,11 +307,7 @@ export class Relay
         }
 
         // --- Post-handshake: relay all messages as raw binary ---
-        let msg:BaseMsg
-        try {
-            msg = cborDecode(new Uint8Array(raw))
-        } catch { return }
-
+        const msg = message as BaseMsg
         const t = msg.targetId as string|undefined
         const isAliasToServer = typeof t === 'string' && t.startsWith('server:')
         const deliverToLocal = t === this.peerId || isAliasToServer
@@ -347,7 +329,7 @@ export class Relay
             }
         }
 
-        // 3) Optional fan-out for your "server:*" convention
+        // 3) Optional fan-out for "server:*" convention
         if (isAliasToServer) {
             for (const [peerId, conn] of Object.entries(this.sockets)) {
                 if (peerId === msg.senderId) continue
@@ -368,7 +350,6 @@ export class Relay
             peerMetadata: {},
         }
 
-        // const toConn = this.peers.get(toClientId)
         const toConn = this.sockets[toClientId]
         if (toConn) {
             toConn.send(toArrayBuffer(cborEncode(msg)))
@@ -377,9 +358,6 @@ export class Relay
 
     // HTTP endpoint for health check
     async onRequest (req:Party.Request) {
-        const url = new URL(req.url)
-        console.log('**url path**', url.pathname)
-
         if (new URL(req.url).pathname.includes('/health')) {
             return Response.json({
                 status: 'ok',

@@ -4,7 +4,7 @@ import { WithStorage } from '../src/server/with-storage.js'
 /**
  * Websocket server with storage
  * This example shows how to extend the WithStorage class
- * http://localhost:1999/parties/main/example
+ * http://localhost:1999/parties/main/<doc-id>
  */
 
 /**
@@ -12,17 +12,9 @@ import { WithStorage } from '../src/server/with-storage.js'
  * a new one.
  */
 export default class StorageExample extends WithStorage implements Party.Server {
-    constructor (room) {
-        super(room)
-
-        this.on('peer-candidate', ev => {
-            console.log('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', JSON.stringify(ev, null, 2))
-        })
-
-        this.on('message', ev => {
-            console.log('**got message event***', ev.type)
-        })
-    }
+    // constructor (room) {
+    //     super(room)
+    // }
 
     async onRequest (req:Party.Request) {
         const url = new URL(req.url)
@@ -39,8 +31,5 @@ export default class StorageExample extends WithStorage implements Party.Server 
     async onConnect (conn:Party.Connection) {
         // Call parent onConnect
         super.onConnect(conn)
-
-        // Add custom connection logic
-        console.log('New client connected to storage server')
     }
 }

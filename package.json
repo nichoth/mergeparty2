@@ -8,17 +8,17 @@
       "import": "./dist/client/partykit-websocket-adapter.js",
       "require": "./dist/client/partykit-websocket-adapter.cjs"
     },
-    "./relay": {
-      "import": "./dist/server/relay.js",
-      "require": "./dist/server/relay.cjs"
-    },
     "./server": {
       "import": "./dist/server/index.js",
       "require": "./dist/server/index.cjs"
     },
-    "./network-adpater": {
-      "import": "./dist/client/partykit-network-adapter.js",
-      "require": "./dist/client/partykit-network-adapter.cjs"
+    "./server/relay": {
+      "import": "./dist/server/relay.js",
+      "require": "./dist/server/relay.cjs"
+    },
+    "./server/storage": {
+      "import": "./dist/server/with-storage.js",
+      "require": "./dist/server/with-storage.js"
     },
     "./*": {
       "import": [
