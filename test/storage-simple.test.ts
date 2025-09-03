@@ -62,7 +62,10 @@ class SimpleStorageInterface {
         await this.storage.delete(keyString)
     }
 
-    async loadRange (prefix: string[]): Promise<Array<{ key: string[], data: Uint8Array }>> {
+    async loadRange (prefix: string[]): Promise<Array<{
+        key: string[],
+        data: Uint8Array
+    }>> {
         const prefixString = prefix.join('.')
         const map = await this.storage.list({ prefix: prefixString })
         const results: Array<{ key: string[], data: Uint8Array }> = []
@@ -137,8 +140,10 @@ test('Simple storage interface - range operations', async t => {
     t.equal(doc1Range.length, 2, 'Should load 2 items with docs.doc1 prefix')
 
     // Verify sorting
-    t.equal(doc1Range[0].key.join('.'), 'docs.doc1.chunk1', 'First item should be chunk1')
-    t.equal(doc1Range[1].key.join('.'), 'docs.doc1.chunk2', 'Second item should be chunk2')
+    t.equal(doc1Range[0].key.join('.'), 'docs.doc1.chunk1',
+        'First item should be chunk1')
+    t.equal(doc1Range[1].key.join('.'), 'docs.doc1.chunk2',
+        'Second item should be chunk2')
 })
 
 test('Simple storage interface - remove operations', async t => {

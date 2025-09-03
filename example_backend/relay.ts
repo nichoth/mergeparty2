@@ -1,25 +1,14 @@
 import type * as Party from 'partykit/server'
 import { CORS } from '../src/server/index.js'
 import { Relay } from '../src/server/relay.js'
-import { type PeerId, Repo } from '@substrate-system/automerge-repo-slim'
 
 /**
  * Network-only server (no storage)
- * This example shows how to use just the network adapter for pure relay functionality
- * http://localhost:1999/parties/network-only/example
+ * Use just the network adapter as a pure relay server.
+ * http://localhost:1999/parties/main/<doc-id>
  */
 
 export default class NetworkOnlyServer extends Relay {
-    constructor (room) {
-        super(room)
-        /**
-         * Set _repo so that the network adapter adds itself
-         */
-        this._repo = new Repo({
-            peerId: 'server:' + this.room.id as PeerId
-        })
-    }
-
     static async onBeforeConnect (request:Party.Request, _lobby:Party.Lobby) {
         try {
             // auth here

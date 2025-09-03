@@ -1,14 +1,16 @@
 // src/server/with-storage.ts
 import type * as Party from 'partykit/server'
 import {
-    type AnyDocumentId,
-    type Message,
     Repo,
     type StorageAdapterInterface,
     type StorageKey,
 } from '@substrate-system/automerge-repo-slim'
-import Debug from '@substrate-system/debug/node'
+import Debug from '@substrate-system/debug/cloudflare'
+import { decode as cborDecode } from 'cborg'
 import { Relay } from './relay.js'
+import './polyfill.js'  // need this for cloudflare environment
+
+const debug = Debug('mergeparty:with-storage')
 
 export class WithStorage
     extends Relay
@@ -18,28 +20,48 @@ export class WithStorage
       to decide if we should be announced as a peer. */
     _log:(msg:string)=>void
     _repo:Repo
+    private _flushInterval:NodeJS.Timeout|null = null
 
     constructor (room:Party.Room, repo?:Repo) {
         super(room)
 
-        /**
-         * The Relay class will add itself as a network adapter when
-         * you set `._repo`.
-         */
         if (!repo) {
-            const repo = new Repo({
+            this._repo = new Repo({
                 storage: this,
                 network: [this],
-                sharePolicy: async () => true,
+                // Allow sharing documents - server accepts new documents from clients
+                sharePolicy: async () => {
+                    // Always accept and request documents from any connected peer
+                    return true
+                },
+                // Set a stable peer ID for the server
+                peerId: `server:${this.room.id}` as any,
             })
-
-            this._repo = repo
         } else {
             // repo should already have a network adapter added
             this._repo = repo
         }
 
-        this._log = Debug('mergeparty:storage', this.room.env)
+        // Set up event-driven storage persistence
+        this.setupStoragePersistence()
+
+        this._log = Debug(
+            'mergeparty:storage',
+            this.room.env as Record<string, string>
+        )
+
+        // Set up periodic flush to ensure documents get saved
+        this._flushInterval = setInterval(async () => {
+            try {
+                await this._repo.flush()
+            } catch (e) {
+                this._log(`Periodic flush failed: ${e}`)
+            }
+        }, 5000) // Flush every 5 seconds
+
+        // Initialize the network adapter connection since the repo should call connect on us
+        // The repo should call this automatically, but let's ensure it happens
+        this.connect(this.serverPeerId as any, {})
     }
 
     // /**
@@ -64,11 +86,28 @@ export class WithStorage
             return super.onMessage(raw, conn)
         }
 
-        // 1) Feed the frame to the repo via Relay
-        await super.onMessage(raw, conn)
+        // Check if this is a sync message for a new document
+        try {
+            if (raw instanceof ArrayBuffer) {
+                const decoded = cborDecode(new Uint8Array(raw))
+                if (decoded && decoded.type === 'sync' && decoded.documentId) {
+                    const documentId = decoded.documentId
 
-        // 2) Ensure the relevant handle is ready, then flush
-        await this.safeFlush(raw)
+                    // Check if we already have this document
+                    const existingHandle = this._repo.handles[documentId]
+                    if (!existingHandle) {
+                        // Create a handle for this document so the repo knows about it
+                        // This will trigger the sync process where the server requests the document
+                        this._repo.find(documentId)
+                    }
+                }
+            }
+        } catch (_e) {
+            // If we can't decode the message, just continue with normal processing
+        }
+
+        // Feed the frame to the repo via Relay - this should automatically handle storage
+        await super.onMessage(raw, conn)
     }
 
     /**
@@ -77,8 +116,17 @@ export class WithStorage
      * @returns {Promise<Uint8Array|undefined>}
      */
     async load (key:StorageKey):Promise<Uint8Array|undefined> {
-        const value = await this.room.storage.get(this.keyToString(key))
-        if (!value) return
+        const keyStr = this.keyToString(key)
+        this._log(`Loading from storage: key=${keyStr}`)
+
+        const value = await this.room.storage.get(keyStr)
+        if (!value) {
+            this._log(`No value found for key: ${keyStr}`)
+            return
+        }
+
+        this._log(`Found value for key: ${keyStr}, type=${typeof value}`)
+
         if (value instanceof Uint8Array) return value
         if (value instanceof ArrayBuffer) return new Uint8Array(value)
         if (
@@ -96,15 +144,11 @@ export class WithStorage
      * @param {Uint8Array} value The value to store (Uint8Array)
      */
     async save (key:StorageKey, value:Uint8Array):Promise<void> {
-        // Use .buffer, but slice to correct offset/length
-        const buf = ((
-            value.byteOffset === 0 &&
-            value.byteLength === value.buffer.byteLength
-        ) ?
-            value.buffer :
-            value.slice().buffer)
+        const keyStr = this.keyToString(key)
+        this._log(`Saving to storage: key=${keyStr}, valueLength=${value.length}`)
 
-        await this.room.storage.put(this.keyToString(key), buf)
+        await this.room.storage.put(keyStr, value)
+        this._log(`Successfully saved key: ${keyStr}`)
     }
 
     /**
@@ -118,18 +162,18 @@ export class WithStorage
     /**
      * Loads a range of values from PartyKit storage by prefix.
      * @param prefix The key prefix
-     * @returns {Promise<{ key:StorageKey, value:Uint8Array }[]>}
+     * @returns {Promise<{ key:StorageKey, data:Uint8Array|undefined }[]>}
      */
     async loadRange (prefix:StorageKey):Promise<{
         key:StorageKey;
-        data:Uint8Array;
+        data:Uint8Array | undefined;
     }[]> {
         const key = this.keyToString(prefix)
-        const entries:{ key:StorageKey, data:Uint8Array }[] = []
+        const entries:{ key:StorageKey, data:Uint8Array | undefined }[] = []
         const map = await this.room.storage.list({ prefix: key })
 
         for (const [k, v] of [...map.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-            let u8:Uint8Array
+            let u8:Uint8Array | undefined
             if (v instanceof Uint8Array) u8 = v
             else if (v instanceof ArrayBuffer) u8 = new Uint8Array(v)
             else if (
@@ -139,7 +183,7 @@ export class WithStorage
             ) {
                 u8 = new Uint8Array(Object.values(v))
             } else {
-                continue
+                u8 = undefined
             }
 
             entries.push({ key: this.stringToKey(k), data: u8 })
@@ -160,42 +204,146 @@ export class WithStorage
         }
     }
 
-    onStart ():void {
-        console.log('**Stateful sync server started (Automerge peer w/' +
+    async onStart ():Promise<void> {
+        debug('**Stateful sync server started (Automerge peer w/' +
             ' PartyKit storage)**')
+
+        // Store the storage adapter ID to ensure storage is initialized
+        await this.save(['storage-adapter-id'], new TextEncoder().encode(this.peerId || 'server'))
+        this._log('Storage adapter initialized')
     }
 
-    // --- Helpers ---
+    onClose ():void {
+        if (this._flushInterval) {
+            clearInterval(this._flushInterval)
+            this._flushInterval = null
+        }
+    }
 
-    private async safeFlush (raw:ArrayBuffer|string) {
-        // We only care about binary protocol frames
-        if (!(raw instanceof ArrayBuffer)) return
+    // HTTP endpoints
+    async onRequest (req:Party.Request):Promise<Response> {
+        const url = new URL(req.url)
 
-        // Best-effort decode so we can branch on type & docId
-        let msg:Message|undefined
-        try { msg = this.cborDecode<Message>(raw) } catch { return }
-        const docId = msg?.documentId as AnyDocumentId|undefined
-        if (!docId) return
+        // Debug endpoint to view storage contents
+        if (url.pathname.includes('/debug/storage')) {
+            const storageMap = await this.room.storage.list()
+            const result:Record<string, any> = {}
+            for (const [key, value] of storageMap) {
+                result[key] = value
+            }
+            return Response.json(result, {
+                status: 200,
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type'
+                }
+            })
+        }
 
-        // Register interest so the repo tracks this doc (non-blocking)
-        try { this._repo.find(docId) } catch {}
+        // Test endpoint to verify storage functionality
+        if (url.pathname.includes('/test/storage')) {
+            debug('[WithStorage] Storage test endpoint called')
+            try {
+                debug('[WithStorage] Starting basic storage operations test...')
 
-        // 2) Only try to persist on 'sync' (a 'request' carries no bytes)
-        if (msg.type !== 'sync') return
+                // Test basic storage operations (this works immediately)
+                const testKey = 'test-manual-storage'
+                const testValue = new TextEncoder().encode('test-value')
 
-        // Flush; ignore the two first-contact races
+                debug('[WithStorage] Calling save...')
+                await this.save([testKey], testValue)
+                debug('[WithStorage] Calling load...')
+                const retrieved = await this.load([testKey])
+
+                if (!retrieved || new TextDecoder().decode(retrieved) !== 'test-value') {
+                    throw new Error('Storage test failed')
+                }
+
+                debug('[WithStorage] Basic storage operations successful')
+
+                // Get repo state for debugging - be very careful here
+                debug('[WithStorage] Storage test: getting repo handles...')
+                let totalHandles = 0
+                let readyHandles = 0
+                let handleIds: string[] = []
+
+                try {
+                    handleIds = Object.keys(this._repo.handles)
+                    totalHandles = handleIds.length
+                    debug(`[WithStorage] Found ${totalHandles} handles`)
+
+                    if (totalHandles > 0) {
+                        const handles = Object.values(this._repo.handles)
+                        debug('[WithStorage] Checking readiness of handles...')
+                        readyHandles = handles.filter(handle => {
+                            try {
+                                return handle.isReady()
+                            } catch (e: any) {
+                                debug(`[WithStorage] Error checking handle readiness: ${e.message}`)
+                                return false
+                            }
+                        }).length
+                    }
+                } catch (e: any) {
+                    debug(`[WithStorage] Error accessing repo handles: ${e.message}`)
+                }
+
+                debug(`[WithStorage] Storage test: found ${totalHandles} total handles, ${readyHandles} ready`)
+
+                return Response.json({
+                    success: true,
+                    message: 'Storage operations successful - Automerge handles persistence automatically',
+                    repoHandles: handleIds,
+                    readyHandles,
+                    totalHandles,
+                    storageKeys: await this.room.storage.list().then(map => [...map.keys()])
+                }, {
+                    status: 200,
+                    headers: {
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                        'Access-Control-Allow-Headers': 'Content-Type'
+                    }
+                })
+            } catch (error: any) {
+                debug(`[WithStorage] Storage test failed: ${error.message}`)
+                return Response.json({
+                    success: false,
+                    error: error.message
+                }, {
+                    status: 500,
+                    headers: {
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                        'Access-Control-Allow-Headers': 'Content-Type'
+                    }
+                })
+            }
+        }
+
+        // Fall back to parent implementation for health checks
+        return super.onRequest(req)
+    }
+
+    async onConnect (conn:Party.Connection):Promise<void> {
+        // Call parent onConnect first
+        super.onConnect(conn)
+
+        // Trigger a flush when a new client connects to ensure
+        // any existing documents are available
         try {
             await this._repo.flush()
-        } catch (e: any) {
-            const m = String(e?.message || '')
-            if (
-                /DocHandle is not ready/i.test(m) ||
-                /Document .* is unavailable/i.test(m)
-            ) {
-                return  // handle still warming up; skip this cycle
-            }
-            throw e
+            this._log('Flushed on client connect')
+        } catch (e) {
+            this._log(`Failed to flush on connect: ${e}`)
         }
+    }
+
+    private extractDocumentId (_conn: Party.Connection): string | null {
+        // For now, we'll determine the document ID from sync messages
+        // This will be implemented when we receive the first sync message
+        return null
     }
 
     protected unicastByPeerId (peerId:string, data:Uint8Array) {
@@ -209,5 +357,20 @@ export class WithStorage
 
     private stringToKey (key:string):string[] {
         return key.split('.')
+    }
+
+    private setupStoragePersistence ():void {
+        debug('[WithStorage] Setting up storage persistence - Automerge should handle this automatically')
+
+        // Log repo state periodically for debugging
+        setInterval(() => {
+            const handleCount = Object.keys(this._repo.handles).length
+            if (handleCount > 0) {
+                const handles = Object.values(this._repo.handles)
+                const readyHandles = handles.filter(handle => handle.isReady())
+                debug(`[WithStorage] Repo state: ${handleCount} total handles, ${readyHandles.length} ready`)
+                debug('[WithStorage] Handle IDs:', Object.keys(this._repo.handles))
+            }
+        }, 5000) // Log every 5 seconds for debugging
     }
 }

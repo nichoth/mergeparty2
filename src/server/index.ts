@@ -1,5 +1,3 @@
-// import type * as Party from 'partykit/server'
-
 export const CORS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'HEAD, POST, GET, OPTIONS',

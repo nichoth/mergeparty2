@@ -11,11 +11,13 @@ export const statusMessages = {
     disconnected: 'Disconnected'
 }
 
-localStorage.setItem('DEBUG', 'mergeparty:*')  // application debug
-localStorage.setItem(  // automerge debug
-    'debug',
-    'automerge-repo:docsync*,automerge-repo:network*,automerge-repo:websocket*'
-)
+if (import.meta.env.DEV) {
+    localStorage.setItem('DEBUG', 'mergeparty:*')  // application debug
+    localStorage.setItem(  // automerge debug
+        'debug',
+        'automerge-repo:docsync*,automerge-repo:network*,automerge-repo:websocket*'
+    )
+}
 
 const state = State()
 

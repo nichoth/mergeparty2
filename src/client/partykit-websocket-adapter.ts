@@ -1,8 +1,8 @@
 import {
     WebSocketClientAdapter
 } from '@automerge/automerge-repo-network-websocket'
-import Debug from '@substrate-system/debug'
-const debug = Debug('mergeparty:network')
+import { createDebug } from '@substrate-system/debug'
+const debug = createDebug('mergeparty:network')
 
 interface PartyKitNetworkAdapterOptions {
     host?:string

@@ -1,6 +1,7 @@
 import type * as Party from 'partykit/server'
 import { encode as cborEncode, decode as cborDecode } from 'cborg'
 import { EventEmitter } from 'eventemitter3'
+import Debug from '@substrate-system/debug/cloudflare'
 import {
     type NetworkAdapterEvents,
     type NetworkAdapter,
@@ -26,7 +27,8 @@ import {
     ProtocolV1
 } from '@substrate-system/automerge-repo-network-websocket/protocolVersion'
 import { toArrayBuffer, toU8, assert } from '../util.js'
-import Debug from '@substrate-system/debug/node'
+
+const debug = Debug('mergeparty:relay')
 
 /**
  * Relay-only server.
@@ -68,7 +70,7 @@ export class Relay
         // Use a deterministic server peer id per room so clients can address
         // the server if they want
         this.serverPeerId = `server:${room.id}`
-        this._log = Debug('mergeparty:relay', this.room.env)
+        this._log = Debug('mergeparty:relay', this.room.env as Record<string, string>)
     }
 
     listenerCount<T extends keyof NetworkAdapterEvents> (
@@ -176,6 +178,8 @@ export class Relay
      * @fires message
      */
     async onMessage (raw:ArrayBuffer|string, conn:Party.Connection) {
+        debug('[Relay] Received message from client')
+
         if (typeof raw === 'string') {
             this.sendErrorAndClose(
                 conn,
@@ -189,7 +193,6 @@ export class Relay
             message = cborDecode(toU8(raw))
         } catch (_err) {
             const err = _err as Error
-            console.log('**invalid message received, closing connection**')
             console.error(err.message)
             conn.close()
             return

@@ -33,19 +33,6 @@ export type ExampleAppState = {
     party:PartySocket|null;
 }
 
-// Create a custom storage adapter that logs save operations
-export class DebugIndexedDBStorageAdapter extends IndexedDBStorageAdapter {
-    async save (key: any, data: Uint8Array): Promise<void> {
-        debug('IndexedDB save called for key:', key, 'data size:', data.length)
-        return super.save(key, data)
-    }
-
-    async load (key:any):Promise<Uint8Array|undefined> {
-        const result = await super.load(key)
-        return result
-    }
-}
-
 export function State ():ExampleAppState {
     // Create repo without network adapter, so it doesn't
     // connect automatically
@@ -83,28 +70,14 @@ State.connect = async function (
     documentId?:AnyDocumentId
 ):Promise<PartySocket|null> {
     const repo = state.repo
+
+    // If no document ID provided, create a new document
     if (!documentId) {
         const doc = State.createDoc(state)
         documentId = doc.documentId
-    } else {
-        debug('a doc ID was passed in...', documentId)
-        // document ID was passed in
-        try {
-            const handle = await state.repo.find<AppDoc>(documentId)
-            state.document.value = handle
-        } catch (_err) {
-            const err = _err as Error
-            debug('Document not found in local storage', documentId, err.message)
-        }
     }
 
-    // state.document.value?.on('change', ev => {
-    //     debug('change event', ev)
-    // })
-
     try {
-        // may or may not have a local document
-
         // Use the document ID to create a partykit room
         const networkAdapter = new PartykitNetworkAdapter({
             host: PARTYKIT_HOST,
@@ -123,27 +96,27 @@ State.connect = async function (
         debug('network adapter ready!')
         state.status.value = 'connected'
 
-        if (!state.document.value) {
-            // do not have a local document
-            debug("Don't have the document yet... so call .find ...")
+        // Now that network is connected, try to find/load the document
+        debug('Attempting to find document from server:', documentId)
 
-            // Try to find the document using repo.find() which handles
-            // network loading
-            try {
-                debug('Attempting to find document:', documentId)
-                const doc = await repo.find<AppDoc>(documentId as AnyDocumentId)
+        try {
+            const doc = await repo.find<AppDoc>(documentId as AnyDocumentId)
 
-                // Wait for it to be ready
-                // (this will trigger network sync if needed)
-                debug('Waiting for document to be ready...')
-                await doc.whenReady()
-                state.document.value = doc
-                debug('Document is ready, content:', doc.doc())
-            } catch (error) {
-                const err = error as Error
-                debug('Could not find document', documentId)
-                debug(err.message)
-            }
+            // Wait for it to be ready (this triggers network sync)
+            debug('Waiting for document to be ready...')
+            await doc.whenReady()
+
+            state.document.value = doc
+            debug('Document is ready, content:', doc.doc())
+        } catch (error) {
+            const err = error as Error
+            debug('Could not find/load document', documentId, err.message)
+
+            // If document doesn't exist anywhere, create a new one with this ID
+            debug('Creating new document with ID:', documentId)
+            const doc = repo.create<AppDoc>({ text: '' })
+            state.document.value = doc
+            debug('Created new document:', doc.documentId)
         }
 
         const party = networkAdapter.socket as PartySocket
