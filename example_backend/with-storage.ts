@@ -1,5 +1,6 @@
 import type * as Party from 'partykit/server'
 import { WithStorage } from '../src/server/with-storage.js'
+import Debug from '@substrate-system/debug'
 
 /**
  * Websocket server with storage
@@ -12,12 +13,18 @@ import { WithStorage } from '../src/server/with-storage.js'
  * a new one.
  */
 export default class StorageExample extends WithStorage implements Party.Server {
-    // constructor (room) {
-    //     super(room)
-    // }
+    constructor (room) {
+        super(room)
+        this._log = Debug('example:storage')
+    }
 
     async onRequest (req:Party.Request) {
         const url = new URL(req.url)
+
+        // Handle HEAD requests for health checking (used by wait-on)
+        if (req.method === 'HEAD') {
+            return new Response(null, { status: 200 })
+        }
 
         if (url.pathname.includes('/debug/storage')) {
             const all = await this.room.storage.list()

@@ -77,7 +77,7 @@
     "@preact/signals": "^2.3.1",
     "@substrate-system/a11y": "^0.0.13",
     "@substrate-system/css-normalize": "^0.0.13",
-    "@substrate-system/debug": "^0.9.8",
+    "@substrate-system/debug": "^0.9.15",
     "@substrate-system/dom": "^0.1.7",
     "@substrate-system/tapout": "^0.0.4",
     "@substrate-system/tapzero": "^0.10.15",

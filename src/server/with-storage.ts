@@ -7,6 +7,7 @@ import {
     type StorageAdapterInterface,
     type StorageKey,
 } from '@substrate-system/automerge-repo-slim'
+import Debug from '@substrate-system/debug/node'
 import { Relay } from './relay.js'
 
 export class WithStorage
@@ -15,18 +16,30 @@ export class WithStorage
 {  // eslint-disable-line brace-style
     readonly isStorageServer:boolean = true  /* This is used by the relay,
       to decide if we should be announced as a peer. */
+    _log:(msg:string)=>void
+    _repo:Repo
 
-    constructor (room:Party.Room) {
+    constructor (room:Party.Room, repo?:Repo) {
         super(room)
 
         /**
          * The Relay class will add itself as a network adapter when
          * you set `._repo`.
          */
-        this._repo = new Repo({
-            storage: this,
-            sharePolicy: async () => true,
-        })
+        if (!repo) {
+            const repo = new Repo({
+                storage: this,
+                network: [this],
+                sharePolicy: async () => true,
+            })
+
+            this._repo = repo
+        } else {
+            // repo should already have a network adapter added
+            this._repo = repo
+        }
+
+        this._log = Debug('mergeparty:storage', this.room.env)
     }
 
     // /**

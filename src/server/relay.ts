@@ -2,7 +2,6 @@ import type * as Party from 'partykit/server'
 import { encode as cborEncode, decode as cborDecode } from 'cborg'
 import { EventEmitter } from 'eventemitter3'
 import {
-    type Repo,
     type NetworkAdapterEvents,
     type NetworkAdapter,
     type PeerId,
@@ -28,13 +27,15 @@ import {
 } from '@substrate-system/automerge-repo-network-websocket/protocolVersion'
 import { toArrayBuffer, toU8, assert } from '../util.js'
 import Debug from '@substrate-system/debug/node'
-const log = Debug('mergeparty:relay')
 
 /**
  * Relay-only server.
  *   - No storage; just routes messages between peers in the same room
  *   - Handshake: expect `join`, reply with `peer`
  *   - Messages: forward anything with a `targetId` to the mapped peer
+ *
+ * The network adapter does not know about the repo at all. It emits events
+ * that the repo listens to.
  *
  * @event 'peer-candidate'
  * @event 'message'
@@ -53,11 +54,7 @@ export class Relay
     peerId?:PeerId  // our peer ID
     peerMetadata?:PeerMetadata  // our peer metadata
     sockets:{ [peerId:PeerId]:Party.Connection } = {}
-    __repo:Repo
-
-    // peerId -> connection
-    // set in the join message handler
-    // private peers = new Map<string, Party.Connection>()
+    _log:(msg:string)=>void
 
     // Connection -> meta { peerId?:string, joined:boolean }
     protected byConn = new Map<Party.Connection, {
@@ -71,21 +68,7 @@ export class Relay
         // Use a deterministic server peer id per room so clients can address
         // the server if they want
         this.serverPeerId = `server:${room.id}`
-    }
-
-    /**
-     * Must set `_repo` __after construction__.
-     */
-    set _repo (repo:Repo) {
-        console.log('____ setting this as network adapter _______')
-        this.__repo = repo
-        this.__repo.networkSubsystem.addNetworkAdapter(this)
-
-        console.log('done setting as network adapter, now listening...')
-    }
-
-    get _repo ():Repo {
-        return this.__repo
+        this._log = Debug('mergeparty:relay', this.room.env)
     }
 
     listenerCount<T extends keyof NetworkAdapterEvents> (
@@ -137,7 +120,7 @@ export class Relay
         // const socket = this.room.getConnection(senderId)
         const to = this.sockets[message.targetId as string]
         if (!to) {
-            log(`Tried to send to disconnected peer: ${message.targetId}`)
+            this._log(`Tried to send to disconnected peer: ${message.targetId}`)
             return
         }
 
