@@ -169,57 +169,47 @@ await networkAdapter.whenReady()
 
 ## Develop
 
-### Example Servers
+### Manually test the storage server
 
-You can start two different types of server, Relay or Storage.
-
-#### Start a relay server (stateless)
-
-```sh
-npm start
-```
-
-Start a simple relay server that forwards messages between clients; does not
-persist messages. Includes a Vite dev server for the browser example.
-Start the server, then visit `localhost:8888` to see the frontend.
-
-The **Partykit config** is in `example_backend/partykit-relay.json`.
-
-The **server** itself is `example_backend/relay.ts`
-
-
-#### Start a stateful storage server
+Start the storage backend:
 
 ```sh
 npm run start:storage
 ```
 
-Start a server with persistent storage using PartyKit's storage backend.
-Documents persist across connections. Start the backend & vite, then visit
-`localhost:8888`.
+Then open a browser to `localhost:8888`. Connect, and write something in the
+text box. Copy the document ID to the clipboard, then refresh the page.
+Delete eveything from indexed DB, then paste the document ID into the input
+and connect to the server again. You should see the same text re-appear in
+the textarea.
 
 The **Partykit config** is in `example_backend/partykit-storage.json`.
 
 The **server** itself is `example_backend/with-storage.ts`
 
 
-#### Start servers for testing (no Vite)
+------------------------------------------------------------------
+
+
+### Manually test the Relay server
+
+Start the servers:
 
 ```sh
-# Relay server only (port 1999)
-npm run start:relay:test
-
-# Storage server only (port 1999)  
-npm run start:storage:test
+npm start
 ```
 
-### Development Workflow
+The open two browser windows to `localhost:8888`. Connect in the first window.
+Copy the document ID that was created, and then paste it into the input
+in browser window 2.
 
-Manual testing:
+Write some text into either textarea. You should see the same text appear in
+the other browser.
 
-```sh
-npm run start:storage  # Start server + browser dev
-```
+The **Partykit config** for the Relay server is
+in `example_backend/partykit-relay.json`.
+
+The **server** itself is `example_backend/relay.ts`
 
 
 ## Test
