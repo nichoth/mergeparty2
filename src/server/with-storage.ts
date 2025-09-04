@@ -20,7 +20,6 @@ export class WithStorage
       to decide if we should be announced as a peer. */
     _log:(msg:string)=>void
     _repo:Repo
-    private _flushInterval:NodeJS.Timeout|null = null
 
     constructor (room:Party.Room, repo?:Repo) {
         super(room)
@@ -50,32 +49,10 @@ export class WithStorage
             this.room.env as Record<string, string>
         )
 
-        // Set up periodic flush to ensure documents get saved
-        this._flushInterval = setInterval(async () => {
-            try {
-                await this._repo.flush()
-            } catch (e) {
-                this._log(`Periodic flush failed: ${e}`)
-            }
-        }, 5000) // Flush every 5 seconds
-
         // Initialize the network adapter connection since the repo should call connect on us
         // The repo should call this automatically, but let's ensure it happens
         this.connect(this.serverPeerId as any, {})
     }
-
-    // /**
-    //  * Get the sync state for a given peer ID.
-    //  */
-    // private stateFor (peerId:string):SyncState {
-    //     let st = this.syncStateByPeer[peerId]
-    //     if (!st) {
-    //         st = initSyncState()
-    //         this.syncStateByPeer[peerId] = st
-    //     }
-
-    //     return st
-    // }
 
     async onMessage (
         raw:ArrayBuffer|string,
@@ -96,8 +73,10 @@ export class WithStorage
                     // Check if we already have this document
                     const existingHandle = this._repo.handles[documentId]
                     if (!existingHandle) {
-                        // Create a handle for this document so the repo knows about it
-                        // This will trigger the sync process where the server requests the document
+                        // Create a handle for this document so the repo knows
+                        // about it
+                        // This will trigger the sync process where the
+                        // server requests the document
                         this._repo.find(documentId)
                     }
                 }
@@ -106,7 +85,8 @@ export class WithStorage
             // If we can't decode the message, just continue with normal processing
         }
 
-        // Feed the frame to the repo via Relay - this should automatically handle storage
+        // Feed the frame to the repo via Relay
+        // this should automatically handle storage
         await super.onMessage(raw, conn)
     }
 
@@ -172,7 +152,9 @@ export class WithStorage
         const entries:{ key:StorageKey, data:Uint8Array | undefined }[] = []
         const map = await this.room.storage.list({ prefix: key })
 
-        for (const [k, v] of [...map.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+        for (const [k, v] of [...map.entries()].sort(([a], [b]) => {
+            return a.localeCompare(b)
+        })) {
             let u8:Uint8Array | undefined
             if (v instanceof Uint8Array) u8 = v
             else if (v instanceof ArrayBuffer) u8 = new Uint8Array(v)
@@ -211,13 +193,6 @@ export class WithStorage
         // Store the storage adapter ID to ensure storage is initialized
         await this.save(['storage-adapter-id'], new TextEncoder().encode(this.peerId || 'server'))
         this._log('Storage adapter initialized')
-    }
-
-    onClose ():void {
-        if (this._flushInterval) {
-            clearInterval(this._flushInterval)
-            this._flushInterval = null
-        }
     }
 
     // HTTP endpoints
@@ -280,7 +255,8 @@ export class WithStorage
                             try {
                                 return handle.isReady()
                             } catch (e: any) {
-                                debug(`[WithStorage] Error checking handle readiness: ${e.message}`)
+                                debug('[WithStorage] Error checking handle' +
+                                    ` readiness: ${e.message}`)
                                 return false
                             }
                         }).length
@@ -289,15 +265,19 @@ export class WithStorage
                     debug(`[WithStorage] Error accessing repo handles: ${e.message}`)
                 }
 
-                debug(`[WithStorage] Storage test: found ${totalHandles} total handles, ${readyHandles} ready`)
+                debug(`[WithStorage] Storage test: found ${totalHandles}` +
+                    ` total handles, ${readyHandles} ready`)
 
                 return Response.json({
                     success: true,
-                    message: 'Storage operations successful - Automerge handles persistence automatically',
+                    message: 'Storage operations successful ' +
+                        '- Automerge handles persistence automatically',
                     repoHandles: handleIds,
                     readyHandles,
                     totalHandles,
-                    storageKeys: await this.room.storage.list().then(map => [...map.keys()])
+                    storageKeys: await this.room.storage.list().then(map => {
+                        return [...map.keys()]
+                    })
                 }, {
                     status: 200,
                     headers: {
@@ -360,7 +340,8 @@ export class WithStorage
     }
 
     private setupStoragePersistence ():void {
-        debug('[WithStorage] Setting up storage persistence - Automerge should handle this automatically')
+        debug('[WithStorage] Setting up storage persistence ' +
+            '- Automerge should handle this automatically')
 
         // Log repo state periodically for debugging
         setInterval(() => {
@@ -368,9 +349,13 @@ export class WithStorage
             if (handleCount > 0) {
                 const handles = Object.values(this._repo.handles)
                 const readyHandles = handles.filter(handle => handle.isReady())
-                debug(`[WithStorage] Repo state: ${handleCount} total handles, ${readyHandles.length} ready`)
-                debug('[WithStorage] Handle IDs:', Object.keys(this._repo.handles))
+                debug(`[WithStorage] Repo state: ${handleCount}` +
+                    ` total handles, ${readyHandles.length} ready`)
+                debug(
+                    '[WithStorage] Handle IDs:',
+                    Object.keys(this._repo.handles)
+                )
             }
-        }, 5000) // Log every 5 seconds for debugging
+        }, 5000)  // Log every 5 seconds for debugging
     }
 }
