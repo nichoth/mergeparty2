@@ -7,6 +7,12 @@ Based on [automerge-repo-sync-server](https://github.com/automerge/automerge-rep
 This creates 1 partykit room per document, using the automerge document ID as
 the room name.
 
+Since we are using [Partykit](https://www.partykit.io/), everything is tied to
+the lifecycle of the websocket server. So we create a
+[Repo](https://github.com/automerge/automerge-repo/tree/main) as part of
+constructing the websocket server.
+
+
 <details><summary><h2>Contents</h2></summary>
 
 <!-- toc -->
@@ -39,20 +45,47 @@ npm i -S @substrate-system/mergeparty
 
 ## Storage
 
+The `@substrate-system/mergeparty/server/storage` path exports a class
+`WithStorage`, that is a Partykit server that implements the
+[Storage Adapter interface](https://github.com/automerge/automerge-repo/blob/0c791e660723d8701a817c02d88bed4bf249b588/packages/automerge-repo/src/storage/StorageAdapterInterface.ts)
+as well as the
+[Network Adapter](https://github.com/automerge/automerge-repo/blob/main/packages/automerge-repo/src/network/NetworkAdapter.ts)
+interface.
+
 Automerge handles document persistence automatically as part of the Repo's
-built-in storage subsystem. This library creates the API expected by the Repo.
+built-in storage subsystem. The Repo calls the Storage Adapter when
+it needs to save or load a document. This library creates the API
+expected by the Repo.
 
 Automerge expects a key/value storage interface with the methods
 `load`, `save`, `remove`, `loadRange`, and `removeRange`. The keys are arrays of
 strings (`StorageKey`) and values are binary blobs (`Uint8Array`).
 
+When a sync message delivers a new change, the repo updates the doc and then
+invokes the storage adapter to persist it.
+
 ## Relay
 
-Just sync documents &mdash; relay messages &mdash; between different peers.
+Just sync documents, or relay messages, between different peers.
+
+The `@substrate-system/mergeparty/server/relay` path exports a class `Relay`,
+that is a Network Adapter. It just relays messages between peers.
+
+The Newtork Adapter emits a set of messages that the Repo listens for.
+
+* `peer-candidate` - tells the repo “I found another peer, do you want
+  to connect?”
+* `message` - delivers a raw message from another peer to the repo.
+* `close` / `peer-disconnected` - lifecycle events.
+
+The Repo call the network adapter’s `send()` function to deliver messages.
+
 
 ## Use
 
 Create a backend (the websocket/partykit server) and a browser client.
+
+See [./example](./example/).
 
 ### Backend
 
