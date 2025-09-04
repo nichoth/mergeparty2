@@ -48,10 +48,7 @@ strings (`StorageKey`) and values are binary blobs (`Uint8Array`).
 
 ## Relay
 
-Official Automerge sync server uses:
-
-* sharePolicy: `async () => false` (don't proactively share documents)
-* Documents are only loaded when explicitly requested by clients
+Just sync documents &mdash; relay messages &mdash; between different peers.
 
 ## Use
 
@@ -59,19 +56,25 @@ Create a backend (the websocket/partykit server) and a browser client.
 
 ### Backend
 
-Your application needs to export a class that extends the `MergeParty` class
-from this module.
+Your application needs to export a class that extends either the `Relay`
+class or the `WithStorage ` class.
 
 See [./example_backend](./example_backend/).
 
 ```js
+import type * as Party from 'partykit/server'
+import { WithStorage } from '@substrate-system/mergeparty/server/relay'
 import { CORS } from '@substrate-system/server'
-import { Relay } from '@substrate-system/mergeparty/server/relay'
 
-export default class ExampleServer extends MergeParty {
-  static async onBeforeConnect (request:Party.Request, _lobby:Party.Lobby) {
-    // auth goes here
-  }
+export default class StorageExample
+  extends WithStorage
+  implements Party.Server
+{
+    static async onBeforeConnect (request:Party.Request, _lobby:Party.Lobby) {
+      // auth goes here
+
+      return request
+    }
 }
 ```
 

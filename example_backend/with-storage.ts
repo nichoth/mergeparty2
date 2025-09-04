@@ -41,7 +41,10 @@ export default class StorageExample extends WithStorage implements Party.Server 
             try {
                 const body = await req.json()
                 // Save a test value to storage
-                await this.room.storage.put('test-manual-storage', JSON.stringify(body))
+                await this.room.storage.put(
+                    'test-manual-storage',
+                    JSON.stringify(body)
+                )
 
                 // Try to flush the repo
                 await this._repo.flush()
