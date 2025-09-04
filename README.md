@@ -18,6 +18,9 @@ constructing the websocket server.
 <!-- toc -->
 
 - [Install](#install)
+- [Logs](#logs)
+  * [Browser](#browser)
+  * [Partykit](#partykit)
 - [Storage](#storage)
 - [Relay](#relay)
 - [Use](#use)
@@ -41,6 +44,32 @@ constructing the websocket server.
 
 ```sh
 npm i -S @substrate-system/mergeparty
+```
+
+## Logs
+
+### Browser
+Set `localStorage`. We have several namespaces:
+
+* `mergeparty:view`
+* `mergeparty:state`
+* `mergeparty:network`
+
+```js
+localStorage.setItem('DEBUG', 'mergeparty:*')
+```
+
+### Partykit
+
+Partykit uses the same scheme, but with environment variables instead of
+`localStorage`.
+
+We have two namespaces, `mergeparty:storage` and
+`mergeparty:relay`. Log everything by setting `mergeparty:*`.
+
+```sh
+# .env
+DEBUG="mergeparty:*"
 ```
 
 ## Storage

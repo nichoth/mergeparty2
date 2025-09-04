@@ -1,16 +1,14 @@
 // src/server/with-storage.ts
 import type * as Party from 'partykit/server'
 import {
+    type PeerId,
     Repo,
     type StorageAdapterInterface,
     type StorageKey,
 } from '@substrate-system/automerge-repo-slim'
-import Debug from '@substrate-system/debug/cloudflare'
 import { decode as cborDecode } from 'cborg'
 import { Relay } from './relay.js'
 import './polyfill.js'  // need this for cloudflare environment
-
-const debug = Debug('mergeparty:with-storage')
 
 export class WithStorage
     extends Relay
@@ -18,7 +16,6 @@ export class WithStorage
 {  // eslint-disable-line brace-style
     readonly isStorageServer:boolean = true  /* This is used by the relay,
       to decide if we should be announced as a peer. */
-    _log:(msg:string)=>void
     _repo:Repo
 
     constructor (room:Party.Room, repo?:Repo) {
@@ -28,13 +25,13 @@ export class WithStorage
             this._repo = new Repo({
                 storage: this,
                 network: [this],
-                // Allow sharing documents - server accepts new documents from clients
+                // server accepts new documents from clients
                 sharePolicy: async () => {
-                    // Always accept and request documents from any connected peer
+                    // Always accept and request documents from any peer
                     return true
                 },
                 // Set a stable peer ID for the server
-                peerId: `server:${this.room.id}` as any,
+                peerId: `server:${this.room.id}` as PeerId,
             })
         } else {
             // repo should already have a network adapter added
@@ -44,12 +41,9 @@ export class WithStorage
         // Set up event-driven storage persistence
         this.setupStoragePersistence()
 
-        this._log = Debug(
-            'mergeparty:storage',
-            this.room.env as Record<string, string>
-        )
+        this._log = this._baseLog.extend('storage')  // mergeparty:storage
 
-        // Initialize the network adapter connection since the repo should call connect on us
+        // Initialize the network adapter connection
         // The repo should call this automatically, but let's ensure it happens
         this.connect(this.serverPeerId as any, {})
     }
@@ -82,7 +76,8 @@ export class WithStorage
                 }
             }
         } catch (_e) {
-            // If we can't decode the message, just continue with normal processing
+            // If we can't decode the message,
+            // just continue with normal processing
         }
 
         // Feed the frame to the repo via Relay
@@ -187,11 +182,14 @@ export class WithStorage
     }
 
     async onStart ():Promise<void> {
-        debug('**Stateful sync server started (Automerge peer w/' +
+        this._log('**Stateful sync server started (Automerge peer w/' +
             ' PartyKit storage)**')
 
         // Store the storage adapter ID to ensure storage is initialized
-        await this.save(['storage-adapter-id'], new TextEncoder().encode(this.peerId || 'server'))
+        await this.save(
+            ['storage-adapter-id'],
+            new TextEncoder().encode(this.peerId || 'server')
+        )
         this._log('Storage adapter initialized')
     }
 
@@ -218,27 +216,30 @@ export class WithStorage
 
         // Test endpoint to verify storage functionality
         if (url.pathname.includes('/test/storage')) {
-            debug('[WithStorage] Storage test endpoint called')
+            this._log('[WithStorage] Storage test endpoint called')
             try {
-                debug('[WithStorage] Starting basic storage operations test...')
+                this._log('[WithStorage] Starting basic storage operations test...')
 
                 // Test basic storage operations (this works immediately)
                 const testKey = 'test-manual-storage'
                 const testValue = new TextEncoder().encode('test-value')
 
-                debug('[WithStorage] Calling save...')
+                this._log('[WithStorage] Calling save...')
                 await this.save([testKey], testValue)
-                debug('[WithStorage] Calling load...')
+                this._log('[WithStorage] Calling load...')
                 const retrieved = await this.load([testKey])
 
-                if (!retrieved || new TextDecoder().decode(retrieved) !== 'test-value') {
+                if (
+                    !retrieved ||
+                    new TextDecoder().decode(retrieved) !== 'test-value'
+                ) {
                     throw new Error('Storage test failed')
                 }
 
-                debug('[WithStorage] Basic storage operations successful')
+                this._log('[WithStorage] Basic storage operations successful')
 
                 // Get repo state for debugging - be very careful here
-                debug('[WithStorage] Storage test: getting repo handles...')
+                this._log('[WithStorage] Storage test: getting repo handles...')
                 let totalHandles = 0
                 let readyHandles = 0
                 let handleIds: string[] = []
@@ -246,26 +247,28 @@ export class WithStorage
                 try {
                     handleIds = Object.keys(this._repo.handles)
                     totalHandles = handleIds.length
-                    debug(`[WithStorage] Found ${totalHandles} handles`)
+                    this._log(`[WithStorage] Found ${totalHandles} handles`)
 
                     if (totalHandles > 0) {
                         const handles = Object.values(this._repo.handles)
-                        debug('[WithStorage] Checking readiness of handles...')
+                        this._log('[WithStorage] Checking readiness of handles...')
                         readyHandles = handles.filter(handle => {
                             try {
                                 return handle.isReady()
                             } catch (e: any) {
-                                debug('[WithStorage] Error checking handle' +
+                                this._log('[WithStorage] Error checking handle' +
                                     ` readiness: ${e.message}`)
                                 return false
                             }
                         }).length
                     }
                 } catch (e: any) {
-                    debug(`[WithStorage] Error accessing repo handles: ${e.message}`)
+                    this._log(
+                        `[WithStorage] Error accessing repo handles: ${e.message}`
+                    )
                 }
 
-                debug(`[WithStorage] Storage test: found ${totalHandles}` +
+                this._log(`[WithStorage] Storage test: found ${totalHandles}` +
                     ` total handles, ${readyHandles} ready`)
 
                 return Response.json({
@@ -287,7 +290,7 @@ export class WithStorage
                     }
                 })
             } catch (error: any) {
-                debug(`[WithStorage] Storage test failed: ${error.message}`)
+                this._log(`[WithStorage] Storage test failed: ${error.message}`)
                 return Response.json({
                     success: false,
                     error: error.message
@@ -320,12 +323,6 @@ export class WithStorage
         }
     }
 
-    private extractDocumentId (_conn: Party.Connection): string | null {
-        // For now, we'll determine the document ID from sync messages
-        // This will be implemented when we receive the first sync message
-        return null
-    }
-
     protected unicastByPeerId (peerId:string, data:Uint8Array) {
         const conn:Party.Connection|undefined = this.sockets[peerId]
         if (conn) conn.send(data)
@@ -340,7 +337,7 @@ export class WithStorage
     }
 
     private setupStoragePersistence ():void {
-        debug('[WithStorage] Setting up storage persistence ' +
+        this._log('[WithStorage] Setting up storage persistence ' +
             '- Automerge should handle this automatically')
 
         // Log repo state periodically for debugging
@@ -349,9 +346,9 @@ export class WithStorage
             if (handleCount > 0) {
                 const handles = Object.values(this._repo.handles)
                 const readyHandles = handles.filter(handle => handle.isReady())
-                debug(`[WithStorage] Repo state: ${handleCount}` +
+                this._log(`[WithStorage] Repo state: ${handleCount}` +
                     ` total handles, ${readyHandles.length} ready`)
-                debug(
+                this._log(
                     '[WithStorage] Handle IDs:',
                     Object.keys(this._repo.handles)
                 )

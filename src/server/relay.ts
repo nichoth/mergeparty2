@@ -1,7 +1,7 @@
 import type * as Party from 'partykit/server'
 import { encode as cborEncode, decode as cborDecode } from 'cborg'
 import { EventEmitter } from 'eventemitter3'
-import Debug from '@substrate-system/debug/cloudflare'
+import Debug, { type Debugger } from '@substrate-system/debug/cloudflare'
 import {
     type NetworkAdapterEvents,
     type NetworkAdapter,
@@ -56,7 +56,8 @@ export class Relay
     peerId?:PeerId  // our peer ID
     peerMetadata?:PeerMetadata  // our peer metadata
     sockets:{ [peerId:PeerId]:Party.Connection } = {}
-    _log:(msg:string)=>void
+    _log:Debugger
+    _baseLog:Debugger
 
     // Connection -> meta { peerId?:string, joined:boolean }
     protected byConn = new Map<Party.Connection, {
@@ -70,7 +71,8 @@ export class Relay
         // Use a deterministic server peer id per room so clients can address
         // the server if they want
         this.serverPeerId = `server:${room.id}`
-        this._log = Debug('mergeparty:relay', this.room.env as Record<string, string>)
+        this._baseLog = Debug('mergeparty')
+        this._log = this._baseLog.extend('relay')  // mergeparty:relay
     }
 
     listenerCount<T extends keyof NetworkAdapterEvents> (
