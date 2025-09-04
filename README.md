@@ -12,12 +12,14 @@ the room name.
 <!-- toc -->
 
 - [Install](#install)
+- [Storage](#storage)
+- [Relay](#relay)
 - [Use](#use)
   * [Backend](#backend)
   * [Browser Client](#browser-client)
 - [Develop](#develop)
-  * [Example Servers](#example-servers)
-  * [Development Workflow](#development-workflow)
+  * [Manually test the storage server](#manually-test-the-storage-server)
+  * [Manually test the Relay server](#manually-test-the-relay-server)
 - [Test](#test)
   * [Storage Unit Tests](#storage-unit-tests)
   * [Storage Tests](#storage-tests)
