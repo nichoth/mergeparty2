@@ -34,7 +34,7 @@ export class WithStorage
                 peerId: `server:${this.room.id}` as PeerId,
             })
         } else {
-            // repo should already have a network adapter added
+            // repo should already have a storage adapter added
             this._repo = repo
         }
 

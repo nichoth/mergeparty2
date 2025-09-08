@@ -8,7 +8,7 @@ This creates 1 partykit room per document, using the automerge document ID as
 the room name.
 
 Since we are using [Partykit](https://www.partykit.io/), everything is tied to
-the lifecycle of the websocket server. So we create a
+the lifecycle of the websocket server. We create a
 [Repo](https://github.com/automerge/automerge-repo/tree/main) as part of
 constructing the websocket server.
 
@@ -95,7 +95,7 @@ invokes the storage adapter to persist it.
 
 ## Relay
 
-Just sync documents, or relay messages, between different peers.
+Just sync documents (relay the messages) between different peers.
 
 The `@substrate-system/mergeparty/server/relay` path exports a class `Relay`,
 that is a Network Adapter. It just relays messages between peers.
@@ -317,7 +317,7 @@ npm run test:integration
 
 ### Relay Tests
 
-Test basic relay server functionality without persistence.
+Test relay server functionality (no persistence).
 
 ```sh
 npm run test:relay
