@@ -27,7 +27,7 @@ jobs:
     - name: Merge PR
       # Ensure tests pass and there's no 'do-not-merge' label
       if: success() && github.event.pull_request.labels.*.name != 'do-not-merge'
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         script: |
           const { context, github } = require('@actions/github');
