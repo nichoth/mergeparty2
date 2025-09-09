@@ -42,10 +42,10 @@ export function State ():ExampleAppState {
     const repo = new Repo({ storage })
 
     // Determine server type from URL or environment
-    const defaultServerType: ServerType =
+    const qs = new URLSearchParams(window.location.search)
+    const defaultServerType:ServerType =
         (import.meta.env.VITE_SERVER_TYPE as ServerType) ||
-        (new URLSearchParams(window.location.search).get('server') as ServerType) ||
-        'relay'
+        (qs.get('server') as ServerType) || 'relay'
 
     return {
         repo,
@@ -88,11 +88,12 @@ State.connect = async function (
     }
 
     try {
-        // Use the document ID to create a partykit room with the selected server type
+        // Use the document ID to create a partykit room with the
+        // selected server type
         const networkAdapter = new PartykitNetworkAdapter({
             host: PARTYKIT_HOST,
             room: documentId as string,
-            party: serverType // Use the selected party type
+            party: serverType  // Use the selected party type
         })
 
         repo.networkSubsystem.addNetworkAdapter(networkAdapter)

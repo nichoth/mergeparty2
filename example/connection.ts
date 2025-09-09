@@ -10,13 +10,13 @@ import { RadioGroup } from './radio-group.js'
  * Show connection status
  * Controls to connect/disconnect
  */
-export const ConnectionForm: FunctionComponent<{
-    state: ExampleAppState
+export const ConnectionForm:FunctionComponent<{
+    state:ExampleAppState
 }> = ({ state }) => {
     const docId = useSignal('')
     const statusMsg = useComputed(() => statusMessages[state.status.value])
 
-    const handleSubmit = async (ev: SubmitEvent) => {
+    const handleSubmit = async (ev:SubmitEvent) => {
         ev.preventDefault()
         const form = ev.target as HTMLFormElement
         const formData = new FormData(form)
@@ -36,7 +36,7 @@ export const ConnectionForm: FunctionComponent<{
                     name="server-type"
                     legend="Choose Server Type"
                     value=${state.serverType.value}
-                    onChange=${(value: string) => {
+                    onChange=${(value:string) => {
                         state.serverType.value = value as 'relay' | 'storage'
                     }}
                     options=${[
@@ -57,7 +57,7 @@ export const ConnectionForm: FunctionComponent<{
                     title="Document ID"
                     name="document-id"
                     value=${docId.value}
-                    onchange=${(ev: any) => {
+                    onchange=${(ev:any) => {
                         docId.value = ev.target.value
                     }}
                 ></text-input>

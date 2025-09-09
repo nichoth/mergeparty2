@@ -12,8 +12,9 @@ interface PartyKitNetworkAdapterOptions {
 
 /**
  * A WebSocket network adapter that connects to PartyKit servers.
- * This is just a thin wrapper around the official `WebSocketClientAdapter`.
- * This constructs the correct PartyKit webSocket URL.
+ * This is just a thin wrapper around the official
+ * automerge `WebSocketClientAdapter`.
+ * It constructs the correct PartyKit webSocket URL.
  */
 export class PartykitNetworkAdapter extends WebSocketClientAdapter {
     constructor (options:PartyKitNetworkAdapterOptions) {
