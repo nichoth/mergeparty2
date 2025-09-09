@@ -16,7 +16,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "npm"
       - run: npm install --no-package-lock
       - name: Deploy unified PartyKit project
         run: npx partykit deploy --config example_backend/partykit.json
