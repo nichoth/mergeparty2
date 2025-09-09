@@ -32,12 +32,66 @@ jobs:
         uses: actions/configure-pages@v5
       - name: Install
         run: npm install
-      - name: Build
+      - name: Build main demo (unified)
         run: npm run build-example
+      - name: Build relay demo
+        run: VITE_SERVER_TYPE=relay npm run build-example
+        env:
+          NODE_ENV: production
+      - name: Build storage demo  
+        run: VITE_SERVER_TYPE=storage npm run build-example
+        env:
+          NODE_ENV: production
+      - name: Organize demos
+        run: |
+          mkdir -p public-final
+          # Main demo (unified with server selection)
+          cp -r public/* public-final/
+          # Relay-specific demo
+          mkdir -p public-final/relay
+          VITE_SERVER_TYPE=relay npm run build-example
+          cp -r public/* public-final/relay/
+          # Storage-specific demo
+          mkdir -p public-final/storage  
+          VITE_SERVER_TYPE=storage npm run build-example
+          cp -r public/* public-final/storage/
+          # Create an index page for navigation
+          cat > public-final/demos.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>MergeParty Demos</title>
+              <style>
+                  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
+                  .demo-link { display: block; padding: 1rem; margin: 1rem 0; border: 1px solid #ccc; text-decoration: none; color: inherit; border-radius: 8px; }
+                  .demo-link:hover { background-color: #f5f5f5; }
+                  h1 { text-align: center; }
+              </style>
+          </head>
+          <body>
+              <h1>MergeParty Demos</h1>
+              <p>Choose a demo to explore:</p>
+              <a href="./" class="demo-link">
+                  <h3>🎯 Main Demo (Unified)</h3>
+                  <p>Interactive demo where you can choose between relay and storage servers.</p>
+              </a>
+              <a href="./relay/" class="demo-link">
+                  <h3>🔄 Relay Server Demo</h3>
+                  <p>Simple message relaying without persistence.</p>
+              </a>
+              <a href="./storage/" class="demo-link">
+                  <h3>💾 Storage Server Demo</h3>
+                  <p>Persistent storage with automatic synchronization.</p>
+              </a>
+          </body>
+          </html>
+          EOF
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: public/
+          path: public-final/
 
   # Deployment job
   deploy:

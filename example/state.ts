@@ -18,8 +18,9 @@ const debug = Debug('mergeparty:state')
 
 export const PARTYKIT_HOST:string = (import.meta.env.DEV ?
     'http://localhost:1999' :
-    'https://merge-party2.nichoth.partykit.dev')
+    'https://merge-party.nichoth.partykit.dev')
 
+export type ServerType = 'relay' | 'storage'
 export type Status = 'connecting'|'connected'|'disconnected'
 
 export type AppDoc = {
@@ -31,6 +32,7 @@ export type ExampleAppState = {
     status:Signal<Status>;
     document:Signal<DocHandle<AppDoc>|null>;
     party:PartySocket|null;
+    serverType:Signal<ServerType>;
 }
 
 export function State ():ExampleAppState {
@@ -39,11 +41,18 @@ export function State ():ExampleAppState {
     const storage = new IndexedDBStorageAdapter()
     const repo = new Repo({ storage })
 
+    // Determine server type from URL or environment
+    const defaultServerType: ServerType =
+        (import.meta.env.VITE_SERVER_TYPE as ServerType) ||
+        (new URLSearchParams(window.location.search).get('server') as ServerType) ||
+        'relay'
+
     return {
         repo,
         document: signal(null),
         status: signal('disconnected'),
-        party: null
+        party: null,
+        serverType: signal(defaultServerType)
     }
 }
 
@@ -70,6 +79,7 @@ State.connect = async function (
     documentId?:AnyDocumentId
 ):Promise<PartySocket|null> {
     const repo = state.repo
+    const serverType = state.serverType.value
 
     // If no document ID provided, create a new document
     if (!documentId) {
@@ -78,10 +88,11 @@ State.connect = async function (
     }
 
     try {
-        // Use the document ID to create a partykit room
+        // Use the document ID to create a partykit room with the selected server type
         const networkAdapter = new PartykitNetworkAdapter({
             host: PARTYKIT_HOST,
-            room: documentId as string
+            room: documentId as string,
+            party: serverType // Use the selected party type
         })
 
         repo.networkSubsystem.addNetworkAdapter(networkAdapter)

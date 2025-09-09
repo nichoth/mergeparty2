@@ -4,18 +4,19 @@ import { type FunctionComponent } from 'preact'
 import { type AnyDocumentId } from '@substrate-system/automerge-repo-slim'
 import { State, type ExampleAppState } from './state.js'
 import { statusMessages } from './index.js'
+import { RadioGroup } from './radio-group.js'
 
 /**
  * Show connection status
  * Controls to connect/disconnect
  */
-export const ConnectionForm:FunctionComponent<{
-    state:ExampleAppState
+export const ConnectionForm: FunctionComponent<{
+    state: ExampleAppState
 }> = ({ state }) => {
     const docId = useSignal('')
     const statusMsg = useComputed(() => statusMessages[state.status.value])
 
-    const handleSubmit = async (ev:SubmitEvent) => {
+    const handleSubmit = async (ev: SubmitEvent) => {
         ev.preventDefault()
         const form = ev.target as HTMLFormElement
         const formData = new FormData(form)
@@ -31,6 +32,25 @@ export const ConnectionForm:FunctionComponent<{
     return html`
         <div class="connector">
             <form onsubmit=${handleSubmit}>
+                <${RadioGroup}
+                    name="server-type"
+                    legend="Choose Server Type"
+                    value=${state.serverType.value}
+                    onChange=${(value: string) => {
+                        state.serverType.value = value as 'relay' | 'storage'
+                    }}
+                    options=${[
+                        {
+                            value: 'relay',
+                            label: 'Relay Server (Simple message relaying)'
+                        },
+                        {
+                            value: 'storage',
+                            label: 'Storage Server (Persistent storage)'
+                        }
+                    ]}
+                />
+
                 <text-input
                     aria-describedby="doc-id-instructions"
                     display-name="Document ID"
@@ -56,7 +76,7 @@ export const ConnectionForm:FunctionComponent<{
                     <div>
                         <span class="connection-indicator" aria-hidden="true"></span>
                         <span class="connection-text">
-                            ${statusMsg}
+                            ${statusMsg} (${state.serverType.value} server)
                         </span>
                     </div>
                     <span class="visually-hidden">

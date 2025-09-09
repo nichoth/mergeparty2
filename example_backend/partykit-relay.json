@@ -1,6 +1,8 @@
 {
   "$schema": "https://www.partykit.io/schema.json",
   "name": "mergeparty",
-  "main": "relay.ts",
+  "parties": {
+    "relay": "relay.ts"
+  },
   "compatibilityDate": "2025-08-14"
 }

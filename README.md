@@ -7,7 +7,39 @@ Based on [automerge-repo-sync-server](https://github.com/automerge/automerge-rep
 This creates 1 partykit room per document, using the automerge document ID as
 the room name.
 
-Since we are using [Partykit](https://www.partykit.io/), everything is tied to
+Since### Development
+
+Start the unified development environment (both relay and storage servers):
+
+```sh
+npm start
+```
+
+This runs both the relay and storage PartyKit servers using the unified configuration, matching the production GitHub Pages deployment. Open a browser to `localhost:8888` and you can choose between relay and storage servers in the UI.
+
+The **unified Partykit config** is in `example_backend/partykit.json`.
+
+#### Individual Server Testing
+
+For focused development on individual servers:
+
+**Storage server only:**
+```sh
+npm run start:storage
+```
+
+**Relay server only:**
+```sh
+npm run start:relay
+```
+
+### Manually test the Storage server
+
+Start the storage backend:
+
+```sh
+npm run start:storage
+``` using [Partykit](https://www.partykit.io/), everything is tied to
 the lifecycle of the websocket server. We create a
 [Repo](https://github.com/automerge/automerge-repo/tree/main) as part of
 constructing the websocket server.
@@ -260,13 +292,13 @@ The **server** itself is `example_backend/with-storage.ts`
 
 ### Manually test the Relay server
 
-Start the servers:
+Start the relay server:
 
 ```sh
-npm start
+npm run start:relay
 ```
 
-The open two browser windows to `localhost:8888`. Connect in the first window.
+Then open two browser windows to `localhost:8888`. Connect in the first window.
 Copy the document ID that was created, and then paste it into the input
 in browser window 2.
 

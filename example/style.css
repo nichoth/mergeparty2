@@ -8,19 +8,16 @@
 */
 @custom-media --mobile (max-width: 768px);
 @custom-media --desktop (min-width: 769px);
-@custom-media --dark (prefers-color-scheme: dark);
 
 :root {
     --maxw: 35rem;
     --error-bgc: red;
-    --focus-border-color: #00d3ff;
+    --focus-border-color: #0066cc;
     --off-white: #FAF9F6;
     --danger: red;
-    --dark-bgc: #1f2937;
-    --dark-color: #f9fafb;
-    --status-connecting: #fbbf24; /* yellow */
-    --status-connected: #10b981;  /* green */
-    --status-disconnected: #ef4444; /* red */
+    --status-connecting: #ff9900; /* orange */
+    --status-connected: #009900;  /* green */
+    --status-disconnected: #cc0000; /* red */
 }
 
 .doc-id {
@@ -43,6 +40,28 @@ body {
     margin: 0 auto;
     margin-bottom: 8rem;
     margin-top: 1rem;
+}
+
+header {
+    margin-bottom: 2rem;
+
+    & h1 {
+        margin-bottom: 1rem;
+    }
+
+    & nav a {
+        color: inherit;
+        text-decoration: none;
+        padding: 0.5rem 1rem;
+        border: 1px solid;
+        margin: 0 0.25rem;
+        display: inline-block;
+        transition: background-color 0.2s ease-in-out;
+
+        &:hover {
+            background-color: #f0f0f0;
+        }
+    }
 }
 
 form {
@@ -68,7 +87,6 @@ textarea {
     &:focus, &:active, &:focus-visible {
         border-color: var(--focus-border-color);
         outline-color: var(--focus-border-color);
-        border-radius: 0;
     }
 }
 
@@ -81,8 +99,8 @@ textarea {
 
 text-input {
     & .input input {
-        border-radius: 0;
         width: 100%;
+        border-radius: 0;
     }
 }
 
@@ -103,6 +121,72 @@ text-input {
 
     & .instructions {
         opacity: 0.8;
+    }
+}
+
+/* Radio Group Component Styles */
+.form-group {
+    &.radios {
+        border: 1px solid black;
+        padding: 1rem;
+        margin-bottom: 1rem;
+
+        & legend {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            padding: 0 0.5rem;
+        }
+    }
+}
+
+.radio-input {
+    --form-control-color: #0066cc;
+    margin-right: 1rem;
+    cursor: pointer;
+    margin-bottom: 0.5rem;
+    
+    & input {
+        cursor: pointer;
+    }
+
+    font-family: system-ui, sans-serif;
+    font-size: 1rem;
+    display: grid;
+    grid-template-columns: 1em auto;
+    gap: 0.5em;
+
+    & span {
+        margin-left: 0.5rem;
+    }
+
+    & input[type="radio"] {
+        -webkit-appearance: none;
+        appearance: none;
+        background-color: #fff;
+        margin: 0;
+        font: inherit;
+        color: currentColor;
+        width: 1.45em;
+        height: 1.45em;
+        border: 1px solid black;
+        border-radius: 50%;
+        display: grid;
+        place-content: center;
+
+        &::before {
+            content: "";
+            width: 0.95em;
+            height: 0.95em;
+            border-radius: 50%;
+            transform: scale(0);
+            transition: 0.2s transform ease-in-out;
+            box-shadow: inset 1em 1em var(--form-control-color);
+        }
+
+        &:checked::before {
+            appearance: initial;
+            transform: scale(1);
+        }
     }
 }
 
@@ -160,7 +244,6 @@ text-input {
 button {
     cursor: pointer;
     border: 1px solid;
-    border-radius: 0;
     padding: 0.4rem 1.5rem;
     background-color: white;
     outline: 2px solid transparent;
@@ -176,19 +259,6 @@ button {
 
 hr {
     margin: 3rem 0;
-}
-
-@media (--dark) {
-    body {
-        background-color: var(--dark-bgc);
-        color: var(--dark-color);
-    }
-    
-    .connection-status {
-        background-color: var(--dark-bgc);
-        border-color: #374151;
-        color: var(--dark-color);
-    }
 }
 
 @media (--mobile) {

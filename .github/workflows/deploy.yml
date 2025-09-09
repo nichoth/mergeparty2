@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  deploy:
+  deploy-partykit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -17,7 +17,8 @@ jobs:
           node-version: 22
           cache: "npm"
       - run: npm ci
-      - run: npx partykit deploy
+      - name: Deploy unified PartyKit project
+        run: npx partykit deploy --config example_backend/partykit.json
         env:
           PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
           PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN  }}
