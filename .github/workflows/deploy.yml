@@ -17,7 +17,7 @@ jobs:
         with:
           node-version: 22
           cache: "npm"
-      - run: npm ci
+      - run: npm install
       - name: Deploy unified PartyKit project
         run: npx partykit deploy --config example_backend/partykit.json
         env:
