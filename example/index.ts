@@ -30,19 +30,8 @@ if (import.meta.env.DEV) {
 const App: FunctionComponent = () => {
     return html`
         <div>
-            <header style="margin-bottom: 2rem; text-align: center;">
+            <header>
                 <h1>MergeParty Demo</h1>
-                ${!import.meta.env.VITE_SERVER_TYPE ? html`
-                    <nav style="margin-bottom: 1rem;">
-                        <a href="./relay/" style="margin-right: 1rem;">Relay Demo</a>
-                        <a href="./storage/">Storage Demo</a>
-                    </nav>
-                ` : html`
-                    <p>Server Type: <strong>${import.meta.env.VITE_SERVER_TYPE}</strong></p>
-                    <nav>
-                        <a href="../">← Back to Main Demo</a>
-                    </nav>
-                `}
             </header>
             <${ConnectionForm} state=${state} />
             <${TextEditor} state=${state} />
