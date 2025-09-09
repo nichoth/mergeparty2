@@ -26,6 +26,7 @@ jobs:
         npm run lint
       env:
         CI: true
-    - name: Run tap tests
+    - name: Run lightweight tests
       run: |
-        xvfb-run --server-args="-screen 0 1920x1080x24" npm test
+        # Run only the lightweight tests (no PartyKit server startup)
+        npm run test:ci

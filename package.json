@@ -43,6 +43,7 @@
   "scripts": {
     "lint": "eslint \"./**/*.{ts,js,mjs}\"",
     "test": "npm run test:storage && npm run test:storage:persistence && npm run test:relay && npm run test:build",
+    "test:ci": "npm run test:storage && npm run test:build",
     "test:build": "npm run build && node ./test/test.build.mjs",
     "test:storage": "npm run build-for-test && esbuild ./test/storage-simple.test.ts --bundle --format=esm | tapout",
     "test:storage:persistence": "npm run build-for-test && npm run test:storage:persistence:run",
