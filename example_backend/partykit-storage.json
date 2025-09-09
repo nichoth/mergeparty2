@@ -1,6 +1,7 @@
 {
   "$schema": "https://www.partykit.io/schema.json",
   "name": "mergeparty",
+  "main": "with-storage.ts",
   "parties": {
     "storage": "with-storage.ts"
   },
