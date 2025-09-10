@@ -1,9 +1,12 @@
 import { html } from 'htm/preact'
 import '@substrate-system/text-input'
 import { type FunctionComponent, render } from 'preact'
+import { useEffect } from 'preact/hooks'
 import { ConnectionForm } from './connection.js'
 import { State } from './state.js'
 import { TextEditor } from './text-editor.js'
+
+const NBSP = '\u00A0'
 
 export const statusMessages = {
     connecting: 'Connecting to server...',
@@ -28,11 +31,26 @@ if (import.meta.env.DEV) {
 
 // Main App Component
 const App: FunctionComponent = () => {
+    useEffect(() => {
+        // Trigger Prism highlighting after component mounts
+        const globalWindow = window as any
+        if (globalWindow.Prism) {
+            globalWindow.Prism.highlightAll()
+        }
+    }, [])
+
     return html`
         <div>
             <header>
                 <h1>MergeParty Demo</h1>
             </header>
+            <p class="instructions">
+                This demonstrates <a href="https://github.com/substrate-system/mergeparty">
+                    mergeparty
+                </a>. See the debug logs by setting <code>DEBUG</code>${NBSP}
+                to <code>mergeparty:*</code> in <code>localStorage</code>.
+            </p>
+
             <${ConnectionForm} state=${state} />
             <${TextEditor} state=${state} />
         </div>

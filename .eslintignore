@@ -1,3 +1,4 @@
 dist/*
 public/*
 test/*.js
+example/prism.js

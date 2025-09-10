@@ -16,6 +16,7 @@ import {
 
 const debug = Debug('mergeparty:state')
 
+// this corresponds to the `partykit.json` file
 export const PARTYKIT_HOST:string = (import.meta.env.DEV ?
     'http://localhost:1999' :
     'https://mergeparty.nichoth.partykit.dev')

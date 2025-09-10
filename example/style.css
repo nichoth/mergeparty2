@@ -40,6 +40,14 @@ body {
     margin: 0 auto;
     margin-bottom: 8rem;
     margin-top: 1rem;
+
+    & pre {
+        background-color: white!important;
+    }
+}
+
+p {
+    margin-bottom: 1rem;
 }
 
 header {
