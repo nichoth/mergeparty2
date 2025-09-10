@@ -1,5 +1,6 @@
 # Merge Party
 
+[![tests](https://img.shields.io/github/actions/workflow/status/bicycle-codes/route-event/nodejs.yml?style=flat-square)](https://github.com/bicycle-codes/route-event/actions/workflows/nodejs.yml)
 [![license](https://img.shields.io/badge/license-Big_Time-blue?style=flat-square)](LICENSE)
 
 

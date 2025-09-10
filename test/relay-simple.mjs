@@ -58,7 +58,10 @@ async function runRelayTests () {
         const checkOutput = (data) => {
             const output = data.toString()
             console.log('[Server]', output.trim())
-            if (output.includes('Ready on http') || output.includes('Relay-only server started')) {
+            if (
+                output.includes('Ready on http') ||
+                output.includes('Relay-only server started')
+            ) {
                 clearTimeout(timeout)
                 resolve()
             }
@@ -110,7 +113,8 @@ async function testBasicEndpoints () {
 
     // Test room health check
     try {
-        const response = await fetch('http://localhost:1999/parties/main/test-room/health')
+        const url = 'http://localhost:1999/parties/main/test-room/health'
+        const response = await fetch(url)
         const data = await response.json()
         console.log('Room health check: PASS')
         console.log('  Connected peers:', data.connectedPeers)
@@ -202,7 +206,11 @@ async function testDocumentRelay () {
             await new Promise(resolve => setTimeout(resolve, 3000))
 
             const doc1Updated = handle1.doc()
-            if (doc1Updated && doc1Updated.text === 'Modified from repo2' && doc1Updated.counter === 99) {
+            if (
+                doc1Updated &&
+                doc1Updated.text === 'Modified from repo2' &&
+                doc1Updated.counter === 99
+            ) {
                 console.log('  Bidirectional sync: PASS')
             } else {
                 throw new Error('Bidirectional sync failed')

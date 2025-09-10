@@ -1,8 +1,9 @@
 import { useSignal, useComputed } from '@preact/signals'
 import { html } from 'htm/preact'
 import { type FunctionComponent } from 'preact'
+import { useCallback } from 'preact/hooks'
 import { type AnyDocumentId } from '@substrate-system/automerge-repo-slim'
-import { State, type ExampleAppState } from './state.js'
+import { type ServerType, State, type ExampleAppState } from './state.js'
 import { statusMessages } from './index.js'
 import { RadioGroup } from './radio-group.js'
 
@@ -16,7 +17,11 @@ export const ConnectionForm:FunctionComponent<{
     const docId = useSignal('')
     const statusMsg = useComputed(() => statusMessages[state.status.value])
 
-    const handleSubmit = async (ev:SubmitEvent) => {
+    const setServerType = useCallback((newType:ServerType) => {
+        State.serverType(state, newType)
+    }, [])
+
+    const handleSubmit = useCallback(async (ev:SubmitEvent) => {
         ev.preventDefault()
         const form = ev.target as HTMLFormElement
         const formData = new FormData(form)
@@ -27,7 +32,7 @@ export const ConnectionForm:FunctionComponent<{
         } else {
             State.disconnect(state)
         }
-    }
+    }, [])
 
     return html`
         <div class="connector">
@@ -36,9 +41,7 @@ export const ConnectionForm:FunctionComponent<{
                     name="server-type"
                     legend="Choose Server Type"
                     value=${state.serverType.value}
-                    onChange=${(value:string) => {
-                        state.serverType.value = value as 'relay' | 'storage'
-                    }}
+                    onChange=${setServerType}
                     options=${[
                         {
                             value: 'relay',
