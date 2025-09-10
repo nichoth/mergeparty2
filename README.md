@@ -1,5 +1,8 @@
 # Merge Party
 
+[![license](https://img.shields.io/badge/license-Big_Time-blue?style=flat-square)](LICENSE)
+
+
 WIP Automerge + Partykit.
 
 Based on [automerge-repo-sync-server](https://github.com/automerge/automerge-repo-sync-server).
@@ -7,7 +10,17 @@ Based on [automerge-repo-sync-server](https://github.com/automerge/automerge-rep
 This creates 1 partykit room per document, using the automerge document ID as
 the room name.
 
-Since### Development
+<details><summary><h2>Contents</h2></summary>
+<!-- toc -->
+</details>
+
+## Install
+
+```sh
+npm i -S @substrate-system/mergeparty
+```
+
+## Development
 
 Start the unified development environment (both relay and storage servers):
 
@@ -15,11 +28,14 @@ Start the unified development environment (both relay and storage servers):
 npm start
 ```
 
-This runs both the relay and storage PartyKit servers using the unified configuration, matching the production GitHub Pages deployment. Open a browser to `localhost:8888` and you can choose between relay and storage servers in the UI.
+This runs both the relay and storage PartyKit servers using the unified
+configuration, matching the production GitHub Pages deployment. Open a
+browser to `localhost:8888` and you can choose between relay and storage
+servers in the UI.
 
 The **unified Partykit config** is in `example_backend/partykit.json`.
 
-#### Individual Server Testing
+### Individual Server Testing
 
 For focused development on individual servers:
 
@@ -39,49 +55,13 @@ Start the storage backend:
 
 ```sh
 npm run start:storage
-``` using [Partykit](https://www.partykit.io/), everything is tied to
-the lifecycle of the websocket server. We create a
-[Repo](https://github.com/automerge/automerge-repo/tree/main) as part of
-constructing the websocket server.
-
-
-<details><summary><h2>Contents</h2></summary>
-
-<!-- toc -->
-
-- [Install](#install)
-- [Logs](#logs)
-  * [Browser](#browser)
-  * [Partykit](#partykit)
-- [Storage](#storage)
-- [Relay](#relay)
-- [Use](#use)
-  * [Backend](#backend)
-  * [Browser Client](#browser-client)
-- [Develop](#develop)
-  * [Manually test the storage server](#manually-test-the-storage-server)
-  * [Manually test the Relay server](#manually-test-the-relay-server)
-- [Test](#test)
-  * [Storage Unit Tests](#storage-unit-tests)
-  * [Storage Tests](#storage-tests)
-  * [Integration Tests (End-to-End)](#integration-tests-end-to-end)
-  * [Relay Tests](#relay-tests)
-  * [All Tests](#all-tests)
-
-<!-- tocstop -->
-
-</details>
-
-## Install
-
-```sh
-npm i -S @substrate-system/mergeparty
 ```
 
 ## Logs
 
 ### Browser
-Set `localStorage`. We have several namespaces:
+
+Set `localStorage`. We have several log namespaces:
 
 * `mergeparty:view`
 * `mergeparty:state`
@@ -107,27 +87,26 @@ DEBUG="mergeparty:*"
 ## Storage
 
 The `@substrate-system/mergeparty/server/storage` path exports a class
-`WithStorage`, that is a Partykit server that implements the
+`WithStorage`. It is a Partykit server that implements the
 [Storage Adapter interface](https://github.com/automerge/automerge-repo/blob/0c791e660723d8701a817c02d88bed4bf249b588/packages/automerge-repo/src/storage/StorageAdapterInterface.ts)
 as well as the
-[Network Adapter](https://github.com/automerge/automerge-repo/blob/main/packages/automerge-repo/src/network/NetworkAdapter.ts)
-interface.
+[Network Adapter Interface](https://github.com/automerge/automerge-repo/blob/main/packages/automerge-repo/src/network/NetworkAdapter.ts).
 
 Automerge handles document persistence automatically as part of the Repo's
-built-in storage subsystem. The Repo calls the Storage Adapter when
+storage subsystem. The Repo calls the Storage Adapter when
 it needs to save or load a document. This library creates the API
-expected by the Repo.
+expected by the Repo, [using Partykit for storage](https://docs.partykit.io/guides/persisting-state-into-storage/).
 
 Automerge expects a key/value storage interface with the methods
 `load`, `save`, `remove`, `loadRange`, and `removeRange`. The keys are arrays of
-strings (`StorageKey`) and values are binary blobs (`Uint8Array`).
+strings (`StorageKey` type) and values are binary blobs (`Uint8Array`).
 
 When a sync message delivers a new change, the repo updates the doc and then
 invokes the storage adapter to persist it.
 
 ## Relay
 
-Just sync documents (relay the messages) between different peers.
+Just relay the messages between different machines.
 
 The `@substrate-system/mergeparty/server/relay` path exports a class `Relay`,
 that is a Network Adapter. It just relays messages between peers.
