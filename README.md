@@ -48,43 +48,6 @@ the room name.
 npm i -S @substrate-system/mergeparty
 ```
 
-## Development
-
-Start the unified development environment (both relay and storage servers):
-
-```sh
-npm start
-```
-
-This runs both the relay and storage PartyKit servers using the unified
-configuration, matching the production GitHub Pages deployment. Open a
-browser to `localhost:8888` and you can choose between relay and storage
-servers in the UI.
-
-The **unified Partykit config** is in `example_backend/partykit.json`.
-
-### Individual Server Testing
-
-For focused development on individual servers:
-
-**Storage server only:**
-```sh
-npm run start:storage
-```
-
-**Relay server only:**
-```sh
-npm run start:relay
-```
-
-### Manually test the Storage server
-
-Start the storage backend:
-
-```sh
-npm run start:storage
-```
-
 ## Logs
 
 ### Browser
