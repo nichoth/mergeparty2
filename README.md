@@ -22,8 +22,9 @@ the room name.
 - [Logs](#logs)
   * [Browser](#browser)
   * [Partykit](#partykit)
-- [Storage](#storage)
-- [Relay](#relay)
+- [Servers](#servers)
+  * [Storage](#storage)
+  * [Relay](#relay)
 - [Use](#use)
   * [Backend](#backend)
   * [Browser Client](#browser-client)
@@ -111,7 +112,11 @@ We have two namespaces, `mergeparty:storage` and
 DEBUG="mergeparty:*"
 ```
 
-## Storage
+## Servers
+
+Two server types &mdash; storage or relay.
+
+### Storage
 
 The `@substrate-system/mergeparty/server/storage` path exports a class
 `WithStorage`. It is a Partykit server that implements the
@@ -131,7 +136,7 @@ strings (`StorageKey` type) and values are binary blobs (`Uint8Array`).
 When a sync message delivers a new change, the repo updates the doc and then
 invokes the storage adapter to persist it.
 
-## Relay
+### Relay
 
 Just relay the messages between different machines.
 
