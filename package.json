@@ -1,6 +1,6 @@
 {
   "name": "@substrate-system/mergeparty",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Automerge + Partykit",
   "type": "module",
   "exports": {

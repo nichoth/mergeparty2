@@ -16,9 +16,6 @@ the room name.
 <!-- toc -->
 
 - [Install](#install)
-- [Development](#development)
-  * [Individual Server Testing](#individual-server-testing)
-  * [Manually test the Storage server](#manually-test-the-storage-server)
 - [Logs](#logs)
   * [Browser](#browser)
   * [Partykit](#partykit)
