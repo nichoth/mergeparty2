@@ -12,7 +12,33 @@ This creates 1 partykit room per document, using the automerge document ID as
 the room name.
 
 <details><summary><h2>Contents</h2></summary>
+
 <!-- toc -->
+
+- [Install](#install)
+- [Development](#development)
+  * [Individual Server Testing](#individual-server-testing)
+  * [Manually test the Storage server](#manually-test-the-storage-server)
+- [Logs](#logs)
+  * [Browser](#browser)
+  * [Partykit](#partykit)
+- [Storage](#storage)
+- [Relay](#relay)
+- [Use](#use)
+  * [Backend](#backend)
+  * [Browser Client](#browser-client)
+- [Develop](#develop)
+  * [Manually test the storage server](#manually-test-the-storage-server)
+  * [Manually test the Relay server](#manually-test-the-relay-server)
+- [Test](#test)
+  * [Storage Unit Tests](#storage-unit-tests)
+  * [Storage Tests](#storage-tests)
+  * [Integration Tests (End-to-End)](#integration-tests-end-to-end)
+  * [Relay Tests](#relay-tests)
+  * [All Tests](#all-tests)
+
+<!-- tocstop -->
+
 </details>
 
 ## Install
