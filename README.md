@@ -1,6 +1,7 @@
 # Merge Party
 
-[![tests](https://img.shields.io/github/actions/workflow/status/bicycle-codes/route-event/nodejs.yml?style=flat-square)](https://github.com/bicycle-codes/route-event/actions/workflows/nodejs.yml)
+[![tests](https://img.shields.io/github/actions/workflow/status/substrate-system/mergeparty/nodejs.yml?style=flat-square)](https://github.com/substrate-system/mergeparty/actions/workflows/nodejs.yml)
+[![types](https://img.shields.io/npm/types/@substrate-system/icons?style=flat-square)](README.md)
 [![license](https://img.shields.io/badge/license-Big_Time-blue?style=flat-square)](LICENSE)
 
 
