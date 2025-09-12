@@ -116,6 +116,29 @@ The Newtork Adapter emits a set of messages that the Repo listens for.
 
 The Repo call the network adapter’s `send()` function to deliver messages.
 
+## Some Notes
+
+### CBOR
+
+The dependency [cbor-x](https://www.npmjs.com/package/cbor-x) did not work in
+Cloudflare's runtime.
+
+```
+service core:user:: Uncaught TypeError: Cannot read properties of undefined (reading 'utf8Write')
+```
+
+That's why this is using a forked version of `automerge-repo-slim` and
+`automerge-repo-network-websocket`. I replaced `cbor-x` with
+[`cborg`](https://www.npmjs.com/package/cborg).
+
+### `performance`
+
+Had to polyfill the `globalThis.performance` function for Cloudflare.
+See [./src/server/polyfill.js](./src/server/polyfill.js)
+
+
+------------
+
 
 ## Use
 
